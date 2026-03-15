@@ -21,7 +21,7 @@
 [![Yjs](https://img.shields.io/badge/Yjs-13.6.18-ffcc00?labelColor=20232a&logo=y&logoColor=white)](https://github.com/yjs/yjs)
 [![Groq SDK](https://img.shields.io/badge/AI-Groq%20SDK-6d28d9?logo=spark&logoColor=white)](https://groq.com)
 
-[Features](#-features) • [Tech Stack](#-tech-stack) • [Getting Started](#-getting-started) • [Architecture](#-architecture) • [Contributing](#-contributing)
+[🌐 Live Demo](https://codelive.apps24.tech)
 
 </div>
 
@@ -227,12 +227,12 @@ Make sure you have the following installed:
 ## 👨‍💻 Developer Profile
 
 **Himadri Karan**  
-*Backend Developer & Software Engineer*
+*Full Stack Developer & Software Engineer*
 
 - 📧 **Email**: [Karanhimadri1234@gmail.com](mailto:Karanhimadri1234@gmail.com)
-- 💼 **LinkedIn**: [linkedin.com/in/himadrikaran](https://linkedin.com/in/himadrikaran)  
+- 💼 **LinkedIn**: [linkedin.com/in/himadri516](https://www.linkedin.com/in/himadri516/)  
 - 🌐 **Portfolio**: [Himadri.me](https://himadri.me)
-- 🐙 **GitHub**: [github.com/karanhimadri](https://github.com/karanhimadri)
+- 🐙 **GitHub**: [github.com/himadri75](https://github.com/himadri75)  
 
 ---
 
