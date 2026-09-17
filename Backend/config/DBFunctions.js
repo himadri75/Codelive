@@ -1,107 +1,275 @@
 const { getCurrentTime } = require("../utils/currentTime");
+const { redisClient } = require("./redis");
 
-const Rooms = new Map();
-const UserToRoom = new Map();
+/*
+Redis structure:
 
-const createNewRoom = (roomId, createdBy = "") => {
-  if (Rooms.has(roomId)) {
-    return { success: false, message: "Room already exists." };
+room:{roomId}
+  created_by
+  created_at
+
+room:{roomId}:users
+  Set of userIds
+
+user:{userId}:room
+  roomId
+  name
+
+room:{roomId}:user:{userId}
+  userId
+  name
+  joined_at
+*/
+
+
+const isRoomExists = async (roomId) => {
+  return (await redisClient.exists(`room:${roomId}`)) === 1;
+};
+
+// Create a new room
+const createNewRoom = async (roomId, createdBy) => {
+  if (!createdBy) {
+    createdBy = "Guest_" + Math.floor(Math.random() * 900 + 100);
   }
 
-  const room = {
+  const roomKey = `room:${roomId}`;
+
+  // Prevent duplicate rooms
+  const exists = await redisClient.exists(roomKey);
+
+  if (exists) {
+    return {
+      success: false,
+      message: "Room already exists.",
+    };
+  }
+
+  await redisClient.hSet(roomKey, {
     created_by: createdBy,
     created_at: getCurrentTime(),
-    users: []
-  };
+  });
 
-  Rooms.set(roomId, room);
-  return { success: true, message: "Room successfully created." };
+  return {
+    success: true,
+    message: "Room successfully created.",
+  };
 };
 
-const joinRoom = (roomId, userId, name) => {
-  if (!Rooms.has(roomId)) {
-    return { success: false, message: "Room does not exist." };
+
+// Join a room
+const joinRoom = async (roomId, userId, name) => {
+  if (!(await isRoomExists(roomId))) {
+    return {
+      success: false,
+      message: "Room does not exist.",
+    };
   }
 
-  const currentRoom = Rooms.get(roomId);
-  if (currentRoom.users.some(u => u.userId === userId)) {
-    return { success: false, message: "User already in room." };
-  }
+  const roomUsersKey = `room:${roomId}:users`;
+  const userRoomKey = `user:${userId}:room`;
+  const userInfoKey = `room:${roomId}:user:${userId}`;
 
-  const userInfo = {
-    name,
-    joined_at: getCurrentTime(),
+  // Check if user is already in this room
+  const alreadyInRoom = await redisClient.sIsMember(
+    roomUsersKey,
     userId
+  );
+
+  if (alreadyInRoom) {
+    return {
+      success: false,
+      message: "User already in room.",
+    };
+  }
+
+  // Optional: prevent a user from joining multiple rooms
+  const existingUserRoom = await redisClient.hGet(
+    userRoomKey,
+    "roomId"
+  );
+
+  if (existingUserRoom) {
+    return {
+      success: false,
+      message: "User is already in another room.",
+    };
+  }
+
+  const joinedAt = getCurrentTime();
+
+  // Add user to room
+  await redisClient.sAdd(roomUsersKey, userId);
+
+  // Store user's room information
+  await redisClient.hSet(userRoomKey, {
+    roomId,
+    name: name || "",
+  });
+
+  // Store user information specific to this room
+  await redisClient.hSet(userInfoKey, {
+    userId,
+    name: name || "",
+    joined_at: joinedAt,
+  });
+
+  return {
+    success: true,
+    message: "User successfully joined the room.",
   };
-
-  currentRoom.users.push(userInfo);
-  UserToRoom.set(userId, { roomId, name });
-
-  return { success: true, message: "User successfully joined the room." };
 };
 
-const getRoomIdFromUserId = (userId) => {
-  const info = UserToRoom.get(userId);
-  if (info && info.roomId) {
-    return { success: true, roomId: info.roomId, name: info.name };
-  }
-  return { success: false, message: "RoomId not found." };
-};
 
-const totalUsersAtRoom = (roomId) => {
-  if (!Rooms.has(roomId)) {
-    return { success: false, message: "Room does not exist." };
-  }
+// Get room information from user ID
+const getRoomIdFromUserId = async (userId) => {
+  const userRoomKey = `user:${userId}:room`;
 
-  const currentRoom = Rooms.get(roomId);
-  return { success: true, count: currentRoom.users.length };
-};
+  const info = await redisClient.hGetAll(userRoomKey);
 
-const leaveRoom = (roomId, userId) => {
-  if (!Rooms.has(roomId)) {
-    return { success: false, message: "Room does not exist." };
-  }
-  const currentRoom = Rooms.get(roomId);
-  const userIndex = currentRoom.users.findIndex(u => u.userId === userId);
-
-  if (userIndex === -1) {
-    return { success: false, message: "User is not in the room." };
-  }
-
-  currentRoom.users.splice(userIndex, 1);
-  UserToRoom.delete(userId);
-
-  return { success: true, message: "User removed from the room." };
-};
-
-const deleteRoom = (roomId) => {
-  if (!Rooms.has(roomId)) {
-    return { success: false, message: "Room does not exist." };
-  }
-
-  const currentRoom = Rooms.get(roomId);
-  if (currentRoom.users.length === 0) {
-    Rooms.delete(roomId);
-    return { success: true, message: "Room deleted." };
-  }
-
-  return { success: false, message: "Room is not empty." };
-};
-
-const getAllUsersById = (roomId) => {
-  const info = Rooms.get(roomId);
-
-  if (!info) {
-    return { success: false, message: "Room not found." };
+  if (!info || !info.roomId) {
+    return {
+      success: false,
+      message: "RoomId not found.",
+    };
   }
 
   return {
     success: true,
-    created_by: info.created_by,
-    created_at: info.created_at,
-    users: info.users
+    roomId: info.roomId,
+    name: info.name,
   };
-}
+};
+
+
+// Get total users in a room
+const totalUsersAtRoom = async (roomId) => {
+  if (!(await isRoomExists(roomId))) {
+    return {
+      success: false,
+      message: "Room does not exist.",
+    };
+  }
+
+  const count = await redisClient.sCard(`room:${roomId}:users`);
+
+  return {
+    success: true,
+    count,
+  };
+};
+
+
+// Leave a room
+const leaveRoom = async (roomId, userId) => {
+  if (!(await isRoomExists(roomId))) {
+    return {
+      success: false,
+      message: "Room does not exist.",
+    };
+  }
+
+  const roomUsersKey = `room:${roomId}:users`;
+  const userRoomKey = `user:${userId}:room`;
+  const userInfoKey = `room:${roomId}:user:${userId}`;
+
+  const isMember = await redisClient.sIsMember(
+    roomUsersKey,
+    userId
+  );
+
+  if (!isMember) {
+    return {
+      success: false,
+      message: "User is not in the room.",
+    };
+  }
+
+  // Remove user from room
+  await redisClient.sRem(roomUsersKey, userId);
+
+  // Remove user's room mapping
+  await redisClient.del(userRoomKey);
+
+  // Remove user's room-specific information
+  await redisClient.del(userInfoKey);
+
+  return {
+    success: true,
+    message: "User removed from the room.",
+  };
+};
+
+
+// Delete a room
+const deleteRoom = async (roomId) => {
+  if (!(await isRoomExists(roomId))) {
+    return {
+      success: false,
+      message: "Room does not exist.",
+    };
+  }
+
+  const roomUsersKey = `room:${roomId}:users`;
+
+  const userCount = await redisClient.sCard(roomUsersKey);
+
+  if (userCount > 0) {
+    return {
+      success: false,
+      message: "Room is not empty.",
+    };
+  }
+
+  await redisClient.del(
+    `room:${roomId}`,
+    roomUsersKey
+  );
+
+  return {
+    success: true,
+    message: "Room deleted.",
+  };
+};
+
+
+// Get all users in a room
+const getAllUsersById = async (roomId) => {
+  const roomKey = `room:${roomId}`;
+
+  const roomInfo = await redisClient.hGetAll(roomKey);
+
+  if (!roomInfo || !roomInfo.created_by) {
+    return {
+      success: false,
+      message: "Room not found.",
+    };
+  }
+
+  const userIds = await redisClient.sMembers(
+    `room:${roomId}:users`
+  );
+
+  const users = await Promise.all(
+    userIds.map(async (userId) => {
+      const userInfo = await redisClient.hGetAll(
+        `room:${roomId}:user:${userId}`
+      );
+
+      return {
+        userId,
+        name: userInfo.name || "",
+        joined_at: userInfo.joined_at || null,
+      };
+    })
+  );
+
+  return {
+    success: true,
+    created_by: roomInfo.created_by,
+    created_at: roomInfo.created_at,
+    users,
+  };
+};
 
 
 module.exports = {
@@ -111,5 +279,5 @@ module.exports = {
   leaveRoom,
   deleteRoom,
   getRoomIdFromUserId,
-  getAllUsersById
+  getAllUsersById,
 };

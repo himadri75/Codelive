@@ -19,10 +19,15 @@ const { createRoomAPI } = require("./controllers/restapi/createRoomAPI");
 const WebSocket = require("ws");
 const { setupWSConnection } = require("y-websocket/bin/utils");
 const generateCode = require("./controllers/restapi/generateCode");
+const { connectRedis, redisClient } = require("./config/redis");
 
 const PORT = process.env.PORT || 8080;
 const app = express();
 const server = http.createServer(app);
+
+(async() => {
+  await connectRedis();
+})()
 
 // ----------------------
 // Express & CORS setup
@@ -44,6 +49,11 @@ app.get("/", (req, res) => res.send(`Main Server is running at port ${PORT}`));
 app.get("/api/ping", (req, res) => res.status(200).send("PONG"));
 app.post("/api/create-room", createRoomAPI);
 app.post("/api/ai/generate", generateCode);
+
+app.get("/api/redis", async(req, res) => {
+  await redisClient.set("message", "Hi, I am himadri")
+  return res.send("OK")
+})
 
 // ----------------------
 // Socket.IO for chat & rooms

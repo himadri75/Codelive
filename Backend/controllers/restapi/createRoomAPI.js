@@ -1,10 +1,10 @@
 // controllers/roomController.js
 const { createNewRoom } = require("../../config/DBFunctions");
 
-const createRoomAPI = (req, res) => {
+const createRoomAPI = async (req, res) => {
   try {
     const { roomId, name } = req.body;
-    const response = createNewRoom(roomId, name);
+    const response = await createNewRoom(roomId, name);
 
     if (response.success) {
       console.log(`✅ Room created by ${name}: ${roomId}`);
@@ -15,8 +15,11 @@ const createRoomAPI = (req, res) => {
     }
   } catch (error) {
     console.error(`❌ Room creation failed: ${error.message}`);
-    return res.status(500).json({ success: false, message: "Room creation failed." });
+    return res
+      .status(500)
+      .json({ success: false, message: "Room creation failed." });
   }
 };
 
 module.exports = { createRoomAPI };
+

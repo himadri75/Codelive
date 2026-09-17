@@ -21,7 +21,7 @@
 [![Yjs](https://img.shields.io/badge/Yjs-13.6.18-ffcc00?labelColor=20232a&logo=y&logoColor=white)](https://github.com/yjs/yjs)
 [![Groq SDK](https://img.shields.io/badge/AI-Groq%20SDK-6d28d9?logo=spark&logoColor=white)](https://groq.com)
 
-[🌐 Live Demo](https://codelive.apps24.tech)
+[🌐 Live ↗](https://codelive.apps24.tech)
 
 </div>
 
@@ -60,7 +60,6 @@
     </td>
   </tr>
 </table>
-
 
 ---
 
@@ -126,6 +125,7 @@
 |------------|---------|
 | **Node.js** | JavaScript runtime environment |
 | **Express.js** | Web application framework |
+| **Redis** | Fast cache service |
 | **Socket.IO** | Real-time WebSocket communication |
 | **Yjs + y-websocket** | Collaborative editing synchronization |
 | **CORS** | Cross-origin resource sharing |
@@ -213,7 +213,7 @@ Make sure you have the following installed:
 
 ### Using AI Code Generation (Optional)
 
-1. Ensure `GROQ_API_KEY` is set in `Backend/.env`.
+1. Ensure `GROQ_API_KEY` and `REDIS_URL` is set in `Backend/.env`.
 2. From the frontend, access the context:
    ```jsx
    import { useAI } from './context/AiContext';

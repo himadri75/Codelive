@@ -155,6 +155,7 @@ const CodeContextProvider = ({ children }) => {
         body: JSON.stringify({ roomId: roomCode, name: userName || "Guest" }),
       });
       const data = await response.json();
+      console.log(data);
 
       if (data.success) {
         console.log(`Room created successfully! You can now join it.`);
