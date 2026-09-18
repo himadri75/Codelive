@@ -10,7 +10,7 @@ const {
   joinRoomController,
   leaveRoomController,
   handleUserDisconnect,
-  getAllUsersController
+  getAllUsersController,
 } = require("./controllers/roomConroller");
 const { handleMsgFromClient } = require("./controllers/chatMessageController");
 const { createRoomAPI } = require("./controllers/restapi/createRoomAPI");
@@ -25,35 +25,49 @@ const PORT = process.env.PORT || 8080;
 const app = express();
 const server = http.createServer(app);
 
-(async() => {
+(async () => {
   await connectRedis();
-})()
+})();
 
 // ----------------------
 // Express & CORS setup
 // ----------------------
 const ALLOWED_ORIGINS = [
-  "http://localhost:5173",
-  "https://codelive.apps24.tech",
-];
+  process.env.ALLOWED_ORIGIN_1,
+  process.env.ALLOWED_ORIGIN_2,
+  process.env.ALLOWED_ORIGIN_3,
+].filter(Boolean);
 
 app.use(express.json());
-app.use(cors({
-  origin: ALLOWED_ORIGINS,
-  methods: ["GET", "POST"],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: ALLOWED_ORIGINS,
+    methods: ["GET", "POST"],
+    credentials: true,
+  }),
+);
+
+app.get("/healthz", async (req, res) => {
+  try {
+    await redisClient.set("healthz", "ok");
+
+    return res.status(200).json({
+      status: "ok",
+      server: "Server is UP",
+      redis: "ok",
+    });
+  } catch (error) {
+    return res.status(503).json({
+      status: "error",
+      server: "Server is UP",
+      redis: "error",
+    });
+  }
+});
 
 // REST Endpoints
-app.get("/", (req, res) => res.send(`Main Server is running at port ${PORT}`));
-app.get("/api/ping", (req, res) => res.status(200).send("PONG"));
 app.post("/api/create-room", createRoomAPI);
 app.post("/api/ai/generate", generateCode);
-
-app.get("/api/redis", async(req, res) => {
-  await redisClient.set("message", "Hi, I am himadri")
-  return res.send("OK")
-})
 
 // ----------------------
 // Socket.IO for chat & rooms
@@ -63,10 +77,10 @@ const io = socketIo(server, {
   cors: {
     origin: ALLOWED_ORIGINS,
     methods: ["GET", "POST"],
-    credentials: true
+    credentials: true,
   },
   transports: ["polling", "websocket"],
-  allowEIO3: true
+  allowEIO3: true,
 });
 
 io.on("connection", (socket) => {
@@ -76,10 +90,18 @@ io.on("connection", (socket) => {
     socket.emit("validateConnection", "Server is connected.");
   });
 
-  socket.on("joinRoom", ({ name, roomCode }) => joinRoomController(io, socket, name, roomCode));
-  socket.on("getAllUser", (roomCode) => getAllUsersController(io, socket, roomCode));
-  socket.on("msgFromClient", ({ roomCode, name, msg }) => handleMsgFromClient(socket, { roomCode, name, msg }));
-  socket.on("leaveRoom", ({ name, roomCode }) => leaveRoomController(io, socket, name, roomCode));
+  socket.on("joinRoom", ({ name, roomCode }) =>
+    joinRoomController(io, socket, name, roomCode),
+  );
+  socket.on("getAllUser", (roomCode) =>
+    getAllUsersController(io, socket, roomCode),
+  );
+  socket.on("msgFromClient", ({ roomCode, name, msg }) =>
+    handleMsgFromClient(socket, { roomCode, name, msg }),
+  );
+  socket.on("leaveRoom", ({ name, roomCode }) =>
+    leaveRoomController(io, socket, name, roomCode),
+  );
   socket.on("disconnect", () => handleUserDisconnect(io, socket));
 });
 
@@ -88,7 +110,7 @@ io.on("connection", (socket) => {
 // ----------------------
 const wss = new WebSocket.Server({ noServer: true });
 
-server.on('upgrade', (request, socket, head) => {
+server.on("upgrade", (request, socket, head) => {
   const pathname = url.parse(request.url).pathname;
 
   if (pathname.startsWith("/yjs")) {

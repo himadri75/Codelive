@@ -1,4 +1,4 @@
-# 🚀 CodeLive - Real-Time Collaborative Code Editor
+# 🚀 CodeLive - Real-Time Collaborative Code Editor With AI
 
 <div align="center">
 
@@ -32,6 +32,7 @@
 **CodeLive** is a full-stack web application that enables multiple users to code together in real-time. Built with modern web technologies, it provides a seamless experience for collaborative coding sessions, technical interviews, and educational purposes. The platform combines the power of Monaco Editor (VS Code's editor) with real-time synchronization using Yjs and WebSocket technology. Recent updates introduce **AI-assisted code generation** via a Groq-powered endpoint for rapid scaffolding and experimentation.
 
 ---
+
 ## 📸 **Project Screenshots**
 
 <table width="100%">
@@ -66,28 +67,33 @@
 ## 🌟 Features
 
 ### Collaborative Editing
+
 - **Live Code Synchronization** - Changes appear instantly for all participants
 - **Multi-language Support** - JavaScript, Python, Java, C++, and more
 - **Monaco Editor Integration** - VSCode-like editing experience in the browser
 - **Cursor Tracking** - See where other users are editing in real-time
 
 ### Communication
+
 - **Real-time Chat** - Text messaging within coding rooms
 - **User Presence** - Track active participants with join/leave notifications
 - **Timestamp Tracking** - See when users joined the session
 
 ### Room Management
+
 - **Unique Room IDs** - Create or join rooms with shareable identifiers
 - **User Count Display** - Real-time count of active participants
 - **Graceful Disconnection** - Automatic cleanup when users leave
 
 ### User Experience
+
 - **Google OAuth** - Quick and secure authentication
 - **Guest Access** - Join with temporary usernames
 - **Theme Toggle** - Switch between light and dark modes
 - **Responsive UI** - Built with Tailwind CSS for modern aesthetics
 
 ### AI Assistance
+
 - **Prompt-Based Code Generation** – Generate clean code snippets via `/api/ai/generate` (Groq Llama 3.3 model).
 - **Raw Output Enforcement** – Backend strips markdown/backticks for direct editor insertion.
 - **Simple Frontend Hook** – `useAI().generateCode(prompt)` from the `AiContext`.
@@ -108,29 +114,31 @@
 ## 🛠 Tech Stack
 
 ### Frontend
-| Technology | Purpose |
-|------------|---------|
-| **React 18.3** | Modern UI library with hooks and context API |
-| **Redux Toolkit** | State management for authentication and app state |
-| **Tailwind CSS** | Utility-first CSS framework for responsive design |
-| **Monaco Editor** | Professional code editor (VSCode's editor) |
-| **Socket.IO Client** | Real-time bidirectional communication |
-| **Yjs** | CRDT for conflict-free collaborative editing |
-| **React Router** | Client-side routing and navigation |
-| **Lucide React** | Beautiful icon library |
-| **Vite** | Fast build tool and development server |
+
+| Technology           | Purpose                                           |
+| -------------------- | ------------------------------------------------- |
+| **React 18.3**       | Modern UI library with hooks and context API      |
+| **Redux Toolkit**    | State management for authentication and app state |
+| **Tailwind CSS**     | Utility-first CSS framework for responsive design |
+| **Monaco Editor**    | Professional code editor (VSCode's editor)        |
+| **Socket.IO Client** | Real-time bidirectional communication             |
+| **Yjs**              | CRDT for conflict-free collaborative editing      |
+| **React Router**     | Client-side routing and navigation                |
+| **Lucide React**     | Beautiful icon library                            |
+| **Vite**             | Fast build tool and development server            |
 
 ### Backend
-| Technology | Purpose |
-|------------|---------|
-| **Node.js** | JavaScript runtime environment |
-| **Express.js** | Web application framework |
-| **Redis** | Fast cache service |
-| **Socket.IO** | Real-time WebSocket communication |
+
+| Technology            | Purpose                               |
+| --------------------- | ------------------------------------- |
+| **Node.js**           | JavaScript runtime environment        |
+| **Express.js**        | Web application framework             |
+| **Redis**             | Fast cache service                    |
+| **Socket.IO**         | Real-time WebSocket communication     |
 | **Yjs + y-websocket** | Collaborative editing synchronization |
-| **CORS** | Cross-origin resource sharing |
-| **dotenv** | Environment variable management |
-| **Groq SDK** | AI code generation (Llama models) |
+| **CORS**              | Cross-origin resource sharing         |
+| **dotenv**            | Environment variable management       |
+| **Groq SDK**          | AI code generation (Llama models)     |
 
 ---
 
@@ -158,6 +166,7 @@
 │          └──────────────┘                                  │
 └────────────────────────────────────────────────────────────┘
 ```
+
 ---
 
 ## 🚀 Getting Started
@@ -165,28 +174,36 @@
 ### Prerequisites
 
 Make sure you have the following installed:
+
 - **Node.js** (v16 or higher)
-- **npm** 
+- **npm**
 
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/karanhimadri/Codelive.git
    cd Codelive
    ```
 
 2. **Setup Backend**
+
    ```bash
    cd Backend
    npm install
    ```
 
-   Create a `.env` file:
+   Create a `.env` file at *Backend/.env*:
+
    ```bash
-   # Backend/.env
-   PORT=8080
-   GROQ_API_KEY=your_groq_key_here
+
+   GROQ_API_KEY=
+   REDIS_URL=
+   ALLOWED_ORIGIN_1=http://localhost:5173 (Vite+React.js)
+   ALLOWED_ORIGIN_2=can_be_empty
+   ALLOWED_ORIGIN_3=
+
    ```
 
 3. **Setup Frontend**
@@ -195,13 +212,24 @@ Make sure you have the following installed:
    npm install
    ```
 
+   Create a `.env` file at *Frontend/.env*:
+
+   ```bash
+
+   VITE_API_URL=http:localhost:8080
+   VITE_YJS_WS_URL=localhost:8080
+
+   ```
+
 ### Running the Application
 
 1. **Start the Backend Server**
+
    ```bash
    cd Backend
    npm start
    ```
+
    Server will run on `http://localhost:8080`
 
 2. **Start the Frontend Development Server**
@@ -211,28 +239,26 @@ Make sure you have the following installed:
    ```
    Application will open on `http://localhost:5173`
 
-### Using AI Code Generation (Optional)
+### Using AI Code Generation
 
-1. Ensure `GROQ_API_KEY` and `REDIS_URL` is set in `Backend/.env`.
-2. From the frontend, access the context:
+1. From the frontend, access the context:
    ```jsx
-   import { useAI } from './context/AiContext';
+   import { useAI } from "./context/AiContext";
    const { generateCode } = useAI();
-   const code = await generateCode('Create a Fibonacci function in Python');
+   const code = await generateCode("Create a Fibonacci function in Python");
    ```
-3. The backend returns raw code (no markdown) ready for editor insertion.
+2. The backend returns raw code (no markdown) ready for editor insertion.
 
 ---
 
 ## 👨‍💻 Developer Profile
 
 **Himadri Karan**  
-*Full Stack Developer & Software Engineer*
+_Full Stack Developer & Software Engineer_
 
 - 📧 **Email**: [Karanhimadri1234@gmail.com](mailto:Karanhimadri1234@gmail.com)
-- 💼 **LinkedIn**: [linkedin.com/in/himadri516](https://www.linkedin.com/in/himadri516/)  
-- 🌐 **Portfolio**: [Himadri.me](https://himadri.me)
-- 🐙 **GitHub**: [github.com/himadri75](https://github.com/himadri75)  
+- 💼 **LinkedIn**: [linkedin.com/in/himadrisde](https://linkedin.com/in/himadrisde)
+- 🌐 **Portfolio**: [Himadrik.in](https://himadrik.in)
 
 ---
 
