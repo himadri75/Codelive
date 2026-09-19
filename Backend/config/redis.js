@@ -10,7 +10,6 @@ redisClient.on("error", (err) => {
 
 async function connectRedis() {
   await redisClient.connect();
-  console.log("Redis connected");
 }
 
 module.exports = {

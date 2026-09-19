@@ -25,13 +25,7 @@ const PORT = process.env.PORT || 8080;
 const app = express();
 const server = http.createServer(app);
 
-(async () => {
-  await connectRedis();
-})();
-
-// ----------------------
 // Express & CORS setup
-// ----------------------
 const ALLOWED_ORIGINS = [
   process.env.ALLOWED_ORIGIN_1,
   process.env.ALLOWED_ORIGIN_2,
@@ -69,9 +63,7 @@ app.get("/healthz", async (req, res) => {
 app.post("/api/create-room", createRoomAPI);
 app.post("/api/ai/generate", generateCode);
 
-// ----------------------
 // Socket.IO for chat & rooms
-// ----------------------
 const io = socketIo(server, {
   path: "/socket.io",
   cors: {
@@ -105,9 +97,7 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => handleUserDisconnect(io, socket));
 });
 
-// ----------------------
 // Yjs WebSocket on same port (path-based upgrade)
-// ----------------------
 const wss = new WebSocket.Server({ noServer: true });
 
 server.on("upgrade", (request, socket, head) => {
@@ -125,12 +115,22 @@ server.on("upgrade", (request, socket, head) => {
   }
 });
 
-// ----------------------
 // Start server
-// ----------------------
-server.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
-  console.log(`   - Socket.IO path: /socket.io`);
-  console.log(`   - Yjs WebSocket path: ws://localhost:${PORT}/yjs`);
-  console.log(`   - REST API available at http://localhost:${PORT}/api`);
-});
+async function startServer() {
+  try {
+    await connectRedis();
+    console.log("✅ Redis connected");
+
+    server.listen(PORT, "0.0.0.0", () => {
+      console.log(`✅ Server running on port ${PORT}`);
+      console.log(`   - Socket.IO path: /socket.io`);
+      console.log(`   - Yjs WebSocket path: /yjs`);
+      console.log(`   - REST API available at /api`);
+    });
+  } catch (error) {
+    console.error("❌ Failed to start server:", error);
+    process.exit(1);
+  }
+}
+
+startServer();
